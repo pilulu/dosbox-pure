@@ -70,6 +70,11 @@ else ifeq ($(platform),tvos-arm64)
   LDFLAGS := -Wl,-dead_strip $(MINVERSION)
   COMMONFLAGS += -DDISABLE_DYNAREC=1 -Wno-unknown-warning-option -Wno-deprecated-declarations $(MINVERSION)
   STRIPCMD := $(or $(STRIP),strip) -xS
+else ifeq ($(platform), emscripten)
+  OUTNAME := dosbox_pure_libretro_$(platform).bc
+  STATIC_LINKING = 1
+  CXX += -std=gnu++11
+  COMMONFLAGS += -DEMSCRIPTEN -pthread
 else ifneq ($(ISMAC),)
   OUTNAME := dosbox_pure_libretro.dylib
   CXX     ?= c++

@@ -247,7 +247,9 @@ struct DBP_PadMapping
 				{
 					if (mapping && mapping < mapping_end) mapping = Apply(port, mapping, false);
 					else if (port == 0 && dbp_auto_mapping) Apply(port, dbp_auto_mapping, true);
+#ifndef __EMSCRIPTEN__
 					else Apply(port, PresetBinds(PRESET_GENERICKEYBOARD, port), true);
+#endif
 				}
 				else
 				{
