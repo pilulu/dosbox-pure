@@ -599,6 +599,7 @@ DOS_File *FindAndOpenDosFile(char const* filename, Bit32u *bsize, bool* writable
 	if (out_resolve_path) {
 		if (drv) { out_resolve_path->assign(1, '$').append(1, (char)('A'+drive)).append(":\\").append(drv_path); upcase(*out_resolve_path); }
 		else { out_resolve_path->assign(filename_s); }
+		Cross::NormalizePath(*out_resolve_path, '\\');
 		DBP_ASSERT(!out_resolve_path->empty());
 	}
 	return dos_file;
@@ -633,6 +634,7 @@ bool ReadAndClose(DOS_File *df, std::string& out, Bit32u maxsize)
 {
 	if (!df) return false;
 	if (!df->refCtr) df->AddRef();
+	if (!maxsize) { df->Close(); delete df; return true; }
 	Bit32u curlen = (Bit32u)out.size(), filesize = 0;
 	df->Seek(&filesize, DOS_SEEK_END);
 	if (filesize > maxsize) { df->Close(); delete df; return false; }

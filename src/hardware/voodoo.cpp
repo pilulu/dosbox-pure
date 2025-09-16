@@ -3540,7 +3540,7 @@ void voodoo_ogl_initfailed()
 {
 	if (vogl) { vogl->Cleanup(); delete vogl; vogl = NULL; }
 	vogl_unavailable = true;
-	v_perf &= ~V_PERFFLAG_OPENGL;
+	v_perf = V_PERFFLAG_MULTITHREAD; // fall back
 }
 
 enum Voodoo_OGL_UsedBits : UINT32
@@ -4348,6 +4348,7 @@ bool voodoo_ogl_mainthread() // called while emulation thread is sleeping
 	// Reset GL states
 	GLERRORASSERT
 	if (last_use_blend == 1) { myglDisable(MYGL_BLEND); GLERRORASSERT }
+	if (last_use_depth_test == 1) { myglDisable(MYGL_DEPTH_TEST); GLERRORASSERT }
 	if (last_depth_masked == 0) { myglDepthMask(MYGL_TRUE); GLERRORASSERT }
 	if (!last_color_masked || !last_alpha_masked) { myglColorMask(MYGL_TRUE, MYGL_TRUE, MYGL_TRUE, MYGL_TRUE); GLERRORASSERT }
 	if (vogl->cmdbuf.live_clipping.active) { myglDisable(MYGL_SCISSOR_TEST); GLERRORASSERT }
@@ -5471,6 +5472,7 @@ static void init_fbi(voodoo_state *v, fbi_state *f, int fbmem)
 	/* allocate frame buffer RAM and set pointers */
 	DBP_ASSERT(fbmem >= 1); //VOODOO: invalid frame buffer memory size requested
 	f->ram = (UINT8*)malloc(fbmem);
+	memset(f->ram, 0, fbmem);
 	f->mask = (UINT32)(fbmem - 1);
 	f->rgboffs[0] = f->rgboffs[1] = f->rgboffs[2] = 0;
 	f->auxoffs = (UINT32)(~0);
@@ -5552,6 +5554,7 @@ static void init_tmu(voodoo_state *v, tmu_state *t, voodoo_reg *reg, int tmem)
 	if (tmem <= 1) E_Exit("VOODOO: invalid texture buffer memory size requested");
 	/* allocate texture RAM */
 	t->ram = (UINT8*)malloc(tmem);
+	memset(t->ram, 0, tmem);
 	t->mask = (UINT32)(tmem - 1);
 	t->reg = reg;
 	t->regdirty = true;
@@ -6543,13 +6546,13 @@ static void fastfill(voodoo_state *v)
 	/* fill in a block of extents */
 	extents[0].startx = sx;
 	extents[0].stopx = ex;
-	for (extnum = 1; extnum < ARRAY_LENGTH(extents); extnum++)
+	for (extnum = 1; extnum < (int)ARRAY_LENGTH(extents); extnum++)
 		extents[extnum] = extents[0];
 
 	/* iterate over blocks of extents */
 	for (y = sy; y < ey; y += ARRAY_LENGTH(extents))
 	{
-		int count = MIN(ey - y, ARRAY_LENGTH(extents));
+		int count = MIN(ey - y, (int)ARRAY_LENGTH(extents));
 		void *dest = drawbuf;
 		int startscanline = y;
 		int numscanlines = count;
@@ -7007,12 +7010,16 @@ static void register_w(UINT32 offset, UINT32 data) {
 				v->reg[regnum].u = data;
 				if (v->reg[hSync].u != 0 && v->reg[vSync].u != 0 && v->reg[videoDimensions].u != 0)
 				{
+#ifdef C_DBP_ENABLE_VOODOO_DEBUG
 					int htotal = ((v->reg[hSync].u >> 16) & 0x3ff) + 1 + (v->reg[hSync].u & 0xff) + 1;
+#endif
 					int vtotal = ((v->reg[vSync].u >> 16) & 0xfff) + (v->reg[vSync].u & 0xfff);
 					int hvis = v->reg[videoDimensions].u & 0x3ff;
 					int vvis = (v->reg[videoDimensions].u >> 16) & 0x3ff;
+#ifdef C_DBP_ENABLE_VOODOO_DEBUG
 					int hbp = (v->reg[backPorch].u & 0xff) + 2;
 					int vbp = (v->reg[backPorch].u >> 16) & 0xff;
+#endif
 					//attoseconds_t refresh = video_screen_get_frame_period(v->screen).attoseconds;
 					attoseconds_t refresh = 0;
 					attoseconds_t stdperiod, medperiod, vgaperiod;
@@ -8859,15 +8866,14 @@ void VOODOO_Init(Section* sec) {
 	Section_prop * section = static_cast<Section_prop *>(sec);
 	v_perf = (UINT8)section->Get_int("voodoo_perf");
 	voodoo_pci_sstdevice.gammafix = section->Get_int("voodoo_gamma")*.1f;
+	if (vogl_unavailable && (v_perf & V_PERFFLAG_OPENGL)) v_perf = V_PERFFLAG_MULTITHREAD;
 	voodoo_ogl_scale = ((v_perf & V_PERFFLAG_OPENGL) ? section->Get_int("voodoo_scale") : 1);
 	if (voodoo_ogl_scale < 1 || voodoo_ogl_scale > 16) voodoo_ogl_scale = 1;
-	if (v_perf == V_PERFFLAG_OPENGL) v_perf |= V_PERFFLAG_MULTITHREAD; // keep multithread as fallback
-	if (vogl_unavailable) v_perf &= ~V_PERFFLAG_OPENGL;
 
 	if (voodoo_pagehandler)
 	{
 		#ifdef C_DBP_ENABLE_VOODOO_OPENGL
-		if (vogl && v && v->active)
+		if (v && v->active)
 		{
 			if (vogl_active && !(v_perf & V_PERFFLAG_OPENGL)) voodoo_ogl_state::Deactivate();
 			if (!vogl_active && (v_perf & V_PERFFLAG_OPENGL)) voodoo_ogl_state::Activate();

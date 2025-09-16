@@ -18,7 +18,7 @@
 
 namespace DBP_OptionCat
 {
-	static const char* Emulation   = "Emulation";
+	static const char* General     = "General";
 	static const char* Input       = "Input";
 	static const char* Performance = "Performance";
 	static const char* Video       = "Video";
@@ -28,7 +28,7 @@ namespace DBP_OptionCat
 
 static retro_core_option_v2_category option_cats[] =
 {
-	{ DBP_OptionCat::Emulation,   DBP_OptionCat::Emulation,   "Core specific settings (latency, save states, start menu)." },
+	{ DBP_OptionCat::General,     DBP_OptionCat::General,     "General settings (save states, start menu, fixed FPS)." },
 	{ DBP_OptionCat::Input,       DBP_OptionCat::Input,       "Keyboard, mouse and joystick settings." },
 	{ DBP_OptionCat::Performance, DBP_OptionCat::Performance, "Adjust the performance of the emulated CPU." },
 	{ DBP_OptionCat::Video,       DBP_OptionCat::Video,       "Settings for the emulated graphics card and aspect ratio." },
@@ -41,7 +41,7 @@ namespace DBP_Option
 {
 	enum Index
 	{
-		// Emulation
+		// General
 		forcefps,
 		savestate,
 		strict_mode,
@@ -49,7 +49,7 @@ namespace DBP_Option
 		menu_time,
 		menu_transparency,
 		// Input
-		on_screen_keyboard,
+		map_osd,
 		mouse_input,
 		mouse_wheel,
 		mouse_speed_factor,
@@ -107,22 +107,28 @@ namespace DBP_Option
 
 static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 {
-	// Emulation
+	// General
 	{
-		"dosbox_pure_force60fps",
+		"dosbox_pure_force60fps", // legacy name
 		"Force Output FPS", NULL,
-		"Enable this to force output at a fixed rate. Try 60 FPS if you encounter screen tearing or vsync issues.", NULL,
-		DBP_OptionCat::Emulation,
+		"Enable this to force output at a fixed rate. Try 60 FPS if you encounter screen tearing or vsync issues." "\n"
+		"Output will have frames skipped at lower rates and frames duplicated at higher rates.", NULL,
+		DBP_OptionCat::General,
 		{
 			{ "false", "Off" },
+			{ "10",   "On (10 FPS)" },
+			{ "15",   "On (15 FPS)" },
+			{ "20",   "On (20 FPS)" },
+			{ "30",   "On (30 FPS)" },
+			{ "35",   "On (35 FPS)" },
+			{ "50",   "On (50 FPS)" },
 			{ "true", "On (60 FPS)" },
-			{ "50", "On (50 FPS)" },
-			{ "70", "On (70 FPS)" },
-			{ "90", "On (90 FPS)" },
-			{ "120", "On (120 FPS)" },
-			{ "144", "On (144 FPS)" },
-			{ "240", "On (240 FPS)" },
-			{ "360", "On (360 FPS)" },
+			{ "70",   "On (70 FPS)" },
+			{ "90",   "On (90 FPS)" },
+			{ "120",  "On (120 FPS)" },
+			{ "144",  "On (144 FPS)" },
+			{ "240",  "On (240 FPS)" },
+			{ "360",  "On (360 FPS)" },
 		},
 		"false"
 	},
@@ -132,7 +138,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 		"Make sure to test it in each game before using it. Complex late era DOS games might have problems." "\n"
 		"Be aware that states saved with different video, CPU or memory settings are not loadable." "\n"
 		"Rewind support comes at a high performance cost and needs at least 40MB of rewind buffer.", NULL,
-		DBP_OptionCat::Emulation,
+		DBP_OptionCat::General,
 		{
 			{ "on",       "Enable save states" },
 			{ "rewind",   "Enable save states with rewind" },
@@ -144,7 +150,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 		"dosbox_pure_strict_mode",
 		"Advanced > Use Strict Mode", NULL,
 		"Disable the command line, running installed operating systems and using .BAT/.COM/.EXE/DOS.YML files from the save game.", NULL,
-		DBP_OptionCat::Emulation,
+		DBP_OptionCat::General,
 		{
 			{ "false", "Off" },
 			{ "true", "On" },
@@ -155,7 +161,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 		"dosbox_pure_conf",
 		"Advanced > Loading of dosbox.conf", NULL,
 		"DOSBox Pure is meant to be configured via core options but optionally supports loading of legacy .conf files.", NULL,
-		DBP_OptionCat::Emulation,
+		DBP_OptionCat::General,
 		{
 			{ "false", "Disabled conf support (default)" },
 			{ "inside", "Try 'dosbox.conf' in the loaded content (ZIP or folder)" },
@@ -168,7 +174,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 		"Advanced > Start Menu", NULL,
 		"Set the behavior of the start menu before and after launching a game." "\n"
 		"You can also force it to open by holding shift or L2/R2 when selecting 'Restart'.", NULL,
-		DBP_OptionCat::Emulation,
+		DBP_OptionCat::General,
 		{
 			{ "99", "Show at start, show again after game exit (default)" },
 #ifndef STATIC_LINKING
@@ -183,8 +189,8 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 	{
 		"dosbox_pure_menu_transparency",
 		"Advanced > Menu Transparency", NULL,
-		"Set the transparency level of the On Screen Keyboard and the Gamepad Mapper.", NULL,
-		DBP_OptionCat::Emulation,
+		"Set the transparency level of the Menu and the On-Screen Keyboard.", NULL,
+		DBP_OptionCat::General,
 		{
 			{ "10", "10%" }, { "20", "20%" }, { "30", "30%" }, { "40", "40%" }, { "50", "50%" }, { "60", "60%" }, { "70", "70%" }, { "80", "80%" }, { "90", "90%" }, { "100", "100%" },
 		},
@@ -193,11 +199,11 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 
 	// Input
 	{
-		"dosbox_pure_on_screen_keyboard",
-		"Enable On Screen Keyboard", NULL,
-		"Enable the On Screen Keyboard feature which can be activated with the L3 button on the controller.", NULL,
+		"dosbox_pure_on_screen_keyboard", // legacy name
+		"Use L3 Button to Show Menu", NULL,
+		"Always bind the L3 controller button to show the menu to swap CDs/Disks and use the On-Screen Keyboard.", NULL,
 		DBP_OptionCat::Input,
-		{ { "true", "On" }, { "false", "Off" } },
+		{ { "true", "On (Default to Menu)" }, { "keyboard", "On (Default to On-Screen Keyboard)" }, { "false", "Off" } },
 		"true"
 	},
 	{
@@ -266,7 +272,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 	},
 	{
 		"dosbox_pure_mouse_speed_factor_x",
-		"Advanced > Horizontal Mouse Sensitivity.", NULL,
+		"Advanced > Horizontal Mouse Sensitivity", NULL,
 		"Experiment with this value if the mouse is too fast/slow when moving left/right.", NULL,
 		DBP_OptionCat::Input,
 		{
@@ -305,7 +311,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 	{
 		"dosbox_pure_keyboard_layout",
 		"Advanced > Keyboard Layout", NULL,
-		"Select the keyboard layout (will not change the On Screen Keyboard).", NULL,
+		"Select the keyboard layout (will not change the On-Screen Keyboard).", NULL,
 		DBP_OptionCat::Input,
 		{
 			{ "us",    "US (default)" },
@@ -432,6 +438,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 			{ "0.8", "80%" }, { "0.81", "81%" }, { "0.82", "82%" }, { "0.83", "83%" }, { "0.84", "84%" }, { "0.85", "85%" }, { "0.86", "86%" }, { "0.87", "87%" }, { "0.88", "88%" }, { "0.89", "89%" },
 			{ "0.9", "90%" }, { "0.91", "91%" }, { "0.92", "92%" }, { "0.93", "93%" }, { "0.94", "94%" }, { "0.95", "95%" }, { "0.96", "96%" }, { "0.97", "97%" }, { "0.98", "98%" }, { "0.99", "99%" },
 			{ "1.0", "100%" },
+			//{ "1.01", "101%" }, { "1.02", "102%" }, { "1.1", "110%" }, { "1.2", "120%" } 
 		},
 		"1.0",
 	},
@@ -580,7 +587,7 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 	{
 		"dosbox_pure_aspect_correction",
 		"Aspect Ratio Correction", NULL,
-		"Adjust the core's aspect ratio to approximate what a CRT monitor would display.", NULL,
+		"Adjust the core's aspect ratio to approximate what a CRT monitor would display (works best on high resolution displays and without integer scaling).", NULL,
 		DBP_OptionCat::Video,
 		{
 			{ "false", "Off (default)" },
@@ -757,7 +764,8 @@ static retro_core_option_v2_definition option_defs[DBP_Option::_OPTIONS_TOTAL] =
 		"MIDI Output", NULL,
 		"Select the .SF2 SoundFont file, .ROM file or interface used for MIDI output." "\n"
 		"To add SoundFonts or ROM files, copy them into the 'system' directory of the frontend." "\n"
-		"To use the frontend MIDI driver, make sure it's set up correctly." "\n\n", NULL, //end of Audio section
+		"To use the frontend MIDI driver, make sure it's set up correctly."
+		"\n\n", NULL, //end of Audio section
 		DBP_OptionCat::Audio,
 		{
 			// dynamically filled in retro_init

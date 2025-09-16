@@ -194,8 +194,10 @@ public:
 			WriteOut(MSG_Get("PROGRAM_CONFIG_SECURE_DISALLOW"));
 			return;
 		}
+#ifdef C_DBP_NATIVE_CONFIGFILE
 		bool path_relative_to_last_config = false;
 		if (cmd->FindExist("-pr",true)) path_relative_to_last_config = true;
+#endif
 
 		/* Check for unmounting */
 		if (cmd->FindString("-u",umount,false)) {
@@ -1086,6 +1088,17 @@ public:
 			WriteOut(MSG_Get("PROGRAM_BOOT_BOOT"), drive);
 			for(i=0;i<512;i++) real_writeb(0, 0x7c00 + i, bootarea.rawdata[i]);
 
+#ifdef C_DBP_ENABLE_IDE
+			// Also enable IDE CDROM when using boot from the command line (as opposed to using the Start Menu)
+			for (Bit8u i = 0; i != 4 /*MAX_IDE_CONTROLLERS*2*/; i++)
+			{
+				if (!Drives[i+2] || !dynamic_cast<isoDrive*>(Drives[i+2])) continue;
+				void IDE_SetupControllers(char);
+				IDE_SetupControllers(0);
+				break;
+			}
+#endif
+
 			/* create appearance of floppy drive DMA usage (Demon's Forge) */
 			if (!IS_TANDY_ARCH && floppysize!=0) GetDMAChannel(2)->tcount=true;
 
@@ -1452,6 +1465,7 @@ public:
 		bool imgsizedetect = false;
 		
 		std::string str_size = "";
+#ifdef C_DBP_ENABLE_DRIVE_MANAGER
 		Bit8u mediaid = 0xF8;
 
 		if (type == "floppy") {
@@ -1461,6 +1475,11 @@ public:
 			mediaid = 0xF8;		
 			fstype = "iso";
 		}
+#else
+		if (type == "iso") {
+			fstype = "iso";
+		}
+#endif
 
 		cmd->FindString("-size",str_size,true);
 		if ((type=="hdd") && (str_size.size()==0)) {
@@ -1793,7 +1812,16 @@ public:
 			imageDisk * newImage = new imageDisk(newDisk, temp_line.c_str(), imagesize, hdd);
 
 			if (hdd) newImage->Set_Geometry(sizes[2],sizes[3],sizes[1],sizes[0]);
-			if(imageDiskList[drive - '0'] != NULL) delete imageDiskList[drive - '0'];
+			if(imageDiskList[drive - '0'] != NULL)
+			{
+				//DBP: Need to unmount fat drives using this image disk first
+				DBP_ASSERT(imageDiskList[drive - '0'] != newImage); // shouldn't be possible with fstype == "none"
+				for (Bit16u i=0;i<DOS_DRIVES;i++)
+					if (fatDrive* fat_drive = (Drives[i] ? dynamic_cast<fatDrive*>(Drives[i]) : NULL))
+						if (fat_drive->loadedDisk == imageDiskList[drive - '0'])
+							UnmountHelper('A' + (char)i);
+				delete imageDiskList[drive - '0'];
+			}
 			imageDiskList[drive - '0'] = newImage;
 			if ((drive == '2' || drive == '3') && hdd) updateDPT();
 			WriteOut(MSG_Get("PROGRAM_IMGMOUNT_MOUNT_NUMBER"),drive - '0',temp_line.c_str());
