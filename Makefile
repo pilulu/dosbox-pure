@@ -74,7 +74,7 @@ else ifeq ($(platform), emscripten)
   OUTNAME := dosbox_pure_libretro_$(platform).bc
   STATIC_LINKING = 1
   CXX += -std=gnu++11
-  COMMONFLAGS += -DEMSCRIPTEN -pthread
+  COMMONFLAGS += -DEMSCRIPTEN -pthread --profiling
 else ifneq ($(ISMAC),)
   OUTNAME := dosbox_pure_libretro.dylib
   CXX     ?= c++
