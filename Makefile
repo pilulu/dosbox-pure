@@ -73,7 +73,7 @@ else ifeq ($(platform),tvos-arm64)
 else ifeq ($(platform), emscripten)
   OUTNAME := dosbox_pure_libretro_$(platform).bc
   STATIC_LINKING = 1
-  CXX += -std=c++23
+  CXX ?= emcc
   COMMONFLAGS += -DEMSCRIPTEN -pthread --profiling 
 else ifneq ($(ISMAC),)
   OUTNAME := dosbox_pure_libretro.dylib
